@@ -1,0 +1,15 @@
+# Secrets: every .env file, in any folder. The .env.example templates are kept.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Logs and editor / OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

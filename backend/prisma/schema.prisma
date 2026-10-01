@@ -1,0 +1,140 @@
+// Print Style — internal customer management database
+//
+// Relational shape (one table per entity, NEVER one table per customer):
+//
+//   Customer 1 ──── * Order * ──── 1 Product
+//
+// The link between a customer and their orders is the human-readable
+// `customerId` ("C001"), because that is the key the business already uses on
+// paper and in WhatsApp messages. `id` stays the internal primary key.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Staff accounts ────────────────────────────────────────────────
+// Only two roles on purpose: the shop has an owner and a few employees.
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String // bcrypt hash
+  role      Role     @default(EMPLOYEE)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ── Customers ─────────────────────────────────────────────────────
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum CustomerSource {
+  INSTAGRAM
+  FACEBOOK
+  WHATSAPP
+  REFERRAL
+  WEBSITE
+  WALK_IN
+  OTHER
+}
+
+model Customer {
+  id         Int             @id @default(autoincrement())
+  customerId String          @unique // C001, C002, ... the business-facing key
+  fullName   String
+  phone      String
+  email      String?
+  age        Int?
+  gender     Gender?
+  city       String
+  country    String          @default("Turkey")
+  source     CustomerSource  @default(OTHER)
+  notes      String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  orders Order[]
+
+  // Customer status (new vs repeat) is deliberately NOT a column: it is derived
+  // from orders so it can never drift out of sync. See customer.analytics.js.
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([city])
+  @@map("customers")
+}
+
+// ── Products ──────────────────────────────────────────────────────
+model Product {
+  id        Int      @id @default(autoincrement())
+  productId String   @unique // P001, P002, ...
+  name      String
+  category  String
+  occasion  String?
+  active    Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([category])
+  @@map("products")
+}
+
+// ── Orders ────────────────────────────────────────────────────────
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id      Int    @id @default(autoincrement())
+  orderId String @unique // O001, O002, ...
+
+  // The relationship the whole app is built around.
+  // Deleting a customer removes their order history with them.
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [customerId], onDelete: Cascade)
+
+  // Orders reference the catalogue when possible, but productName/category are
+  // still stored on the order: a product may be renamed or retired later and the
+  // order must keep showing what was actually sold at the time.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [productId], onDelete: SetNull)
+
+  orderDate   DateTime
+  productName String
+  category    String
+  occasion    String?
+  quantity    Int         @default(1)
+  status      OrderStatus @default(PROCESSING)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([orderDate])
+  @@index([category])
+  @@index([status])
+  @@map("orders")
+}
