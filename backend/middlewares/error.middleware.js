@@ -35,16 +35,31 @@ export const errorMiddleware = (error, req, res, _next) => {
     ["P1000", "P1001", "P1002", "P1003"].includes(connectionCode)
   ) {
     console.error("Database connection failed:", error.message);
-    return res.status(503).json({
+    // 500, not 503: some hosts replace a 503 with their own HTML page, which has
+    // no CORS headers, so the browser would only report "cannot reach server".
+    return res.status(500).json({
       message:
-        "تعذّر الاتصال بقاعدة البيانات. تحقّق من DATABASE_URL في ملف backend/.env ومن أن PostgreSQL يعمل.",
+        "تعذّر الاتصال بقاعدة البيانات. تحقّق من DATABASE_URL ومن أن PostgreSQL يعمل.",
+      code: connectionCode,
+    });
+  }
+
+  // The tables were never created: migrations have not been applied to this database.
+  if (error?.code === "P2021" || error?.code === "P2022") {
+    console.error("Database schema missing:", error.message);
+    return res.status(500).json({
+      message: "جداول قاعدة البيانات غير موجودة. شغّل: npx prisma migrate deploy",
+      code: error.code,
     });
   }
 
   // Anything else is a bug: log it in full, but never leak internals to the client.
+  // The Prisma error code (e.g. P2010) is safe to show and makes logs unnecessary
+  // for the common setup mistakes.
   console.error("Unhandled error:", error);
   return res.status(500).json({
     message: "حدث خطأ في الخادم",
+    ...(error?.code ? { code: error.code } : {}),
     ...(IS_PROD ? {} : { detail: error?.message }),
   });
 };

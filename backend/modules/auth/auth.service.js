@@ -30,7 +30,9 @@ export const signToken = (user) =>
 // disagree about its flags.
 export const cookieOptions = () => ({
   httpOnly: true, // page scripts cannot read it
-  sameSite: "lax", // the dashboard is not embedded anywhere
+  // In production the frontend (Vercel) and the API live on different sites, so
+  // the cookie must be allowed cross-site. "none" requires `secure`.
+  sameSite: IS_PROD ? "none" : "lax",
   secure: IS_PROD, // over HTTPS only in production
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/",

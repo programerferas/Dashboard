@@ -17,6 +17,10 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 const app = express();
 
+// The host terminates HTTPS at its proxy; trust it so Express knows the request
+// was secure and is willing to set the `secure` session cookie.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json({ limit: "200kb" }));
