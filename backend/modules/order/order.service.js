@@ -5,6 +5,7 @@ import { AppError, notFound } from "../../utils/appError.js";
 import { createWithSequentialId } from "../../utils/sequentialId.js";
 import { paginated, readPagination } from "../../utils/pagination.js";
 import { createCustomer } from "../customer/customer.service.js";
+import { sendOrderNotification } from "../notification/whatsapp.service.js";
 
 const ID_OPTIONS = { model: "order", field: "orderId", prefix: "O", width: 3 };
 
@@ -151,8 +152,9 @@ export const createOrder = async ({ newCustomer, ...data }) => {
     await assertCustomerExists(customerId);
   }
 
+  let order;
   try {
-    return await createWithSequentialId(prisma, ID_OPTIONS, (orderId) =>
+    order = await createWithSequentialId(prisma, ID_OPTIONS, (orderId) =>
       prisma.order.create({
         data: {
           orderId,
@@ -172,7 +174,36 @@ export const createOrder = async ({ newCustomer, ...data }) => {
     if (newCustomer) await prisma.customer.delete({ where: { customerId } }).catch(() => {});
     throw error;
   }
+
+  // Only once the order is safely saved. Whatever WhatsApp answers, the order stays.
+  return notifyAdmin(order);
 };
+
+// Sends the WhatsApp notice for a saved order and records the outcome on it.
+const notifyAdmin = async (order) => {
+  const { status, error } = await sendOrderNotification(order);
+
+  try {
+    return await prisma.order.update({
+      where: { orderId: order.orderId },
+      data: {
+        whatsappStatus: status,
+        whatsappError: error,
+        ...(status === "SENT" ? { whatsappSentAt: new Date() } : {}),
+      },
+      include: ORDER_INCLUDE,
+    });
+  } catch (updateError) {
+    // The order is saved; failing the request now would only invite a duplicate
+    // "Add Order" click.
+    console.error(`Could not record WhatsApp status for ${order.orderId}:`, updateError.message);
+    return { ...order, whatsappStatus: status, whatsappError: error };
+  }
+};
+
+// The "resend" button: for a message that failed, or an order created while
+// WhatsApp was switched off.
+export const resendOrderWhatsapp = async (orderId) => notifyAdmin(await getOrder(orderId));
 
 export const updateOrder = async (orderId, data) => {
   const existing = await prisma.order.findUnique({ where: { orderId } });

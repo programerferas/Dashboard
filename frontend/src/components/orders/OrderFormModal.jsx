@@ -200,6 +200,10 @@ export const OrderFormModal = ({
             ? `تمت إضافة العميل ${saved.customer.fullName} (${saved.customerId}) والطلب ${saved.orderId}`
             : `تمت إضافة الطلب ${saved.orderId}`,
       );
+      // The order is saved either way; only say something when the message did not go.
+      if (!isEditing && saved.whatsappStatus === "FAILED") {
+        toast.error(`حُفظ الطلب لكن تعذّر إرسال رسالة واتساب. يمكنك إعادة الإرسال من جدول الطلبات.`);
+      }
       onSaved?.(saved);
       onClose();
     } catch {

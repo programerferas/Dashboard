@@ -6,4 +6,5 @@ export const ordersApi = {
   create: (data) => api.post("/orders", data),
   update: (orderId, data) => api.patch(`/orders/${orderId}`, data),
   remove: (orderId) => api.delete(`/orders/${orderId}`),
+  resendWhatsapp: (orderId) => api.post(`/orders/${orderId}/whatsapp`),
 };

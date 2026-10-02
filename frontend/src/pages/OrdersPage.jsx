@@ -20,6 +20,12 @@ import { useToast } from "../context/ToastContext.jsx";
 import { formatDate, formatNumber, humanise, orEmpty } from "../lib/format.js";
 import { ORDER_SORTS, ORDER_STATUSES, ORDER_STATUS_TONE, toOptions } from "../lib/options.js";
 
+const WHATSAPP_STATUS = {
+  SENT: { tone: "green", label: "أُرسلت" },
+  FAILED: { tone: "red", label: "فشل" },
+  SKIPPED: { tone: "slate", label: "متوقف" },
+};
+
 const OrdersPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -99,6 +105,24 @@ const OrdersPage = () => {
     }
   };
 
+  const { run: runResend } = useAction();
+  const [resendingId, setResendingId] = useState(null);
+
+  const onResendWhatsapp = async (order) => {
+    setResendingId(order.orderId);
+    try {
+      const updated = await runResend(() => ordersApi.resendWhatsapp(order.orderId));
+      if (updated.whatsappStatus === "SENT") toast.success(`أُرسلت رسالة واتساب للطلب ${order.orderId}`);
+      else if (updated.whatsappStatus === "SKIPPED") toast.error("واتساب غير مفعّل على الخادم");
+      else toast.error(`تعذّر الإرسال: ${updated.whatsappError ?? "خطأ غير معروف"}`);
+      reload();
+    } catch (resendError) {
+      toast.error(resendError.message);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const filtersActive =
     Boolean(filters.search) ||
     Boolean(filters.customerId) ||
@@ -152,6 +176,19 @@ const OrdersPage = () => {
       ),
     },
     {
+      key: "whatsapp",
+      label: "واتساب",
+      render: (order) => {
+        if (!order.whatsappStatus) return orEmpty(null);
+        const { tone, label } = WHATSAPP_STATUS[order.whatsappStatus];
+        return (
+          <span title={order.whatsappError ?? undefined}>
+            <Badge tone={tone}>{label}</Badge>
+          </span>
+        );
+      },
+    },
+    {
       key: "notes",
       label: "ملاحظات",
       render: (order) => <span className="cell-sub">{orEmpty(order.notes)}</span>,
@@ -179,6 +216,16 @@ const OrdersPage = () => {
           >
             تعديل
           </Button>
+          {order.whatsappStatus && order.whatsappStatus !== "SENT" ? (
+            <Button
+              size="sm"
+              icon="refresh"
+              disabled={resendingId === order.orderId}
+              onClick={() => onResendWhatsapp(order)}
+            >
+              إعادة واتساب
+            </Button>
+          ) : null}
           {isAdmin ? (
             <Button size="sm" icon="trash" onClick={() => setDeleting(order)}>
               حذف
