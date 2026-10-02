@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "../ui/Primitives.jsx";
 import SearchInput from "../ui/SearchInput.jsx";
+import WhatsappShareModal from "./WhatsappShareModal.jsx";
 import { ordersApi } from "../../api/orders.js";
 import { customersApi } from "../../api/customers.js";
 import { productsApi } from "../../api/products.js";
@@ -79,6 +80,8 @@ export const OrderFormModal = ({
 
   const { run, saving, error, setError } = useAction();
   const toast = useToast();
+  // Set once a new order is saved: the dialog then offers to send it on WhatsApp.
+  const [createdOrder, setCreatedOrder] = useState(null);
 
   // The catalogue, for the product dropdown.
   const { data: products } = useApi(
@@ -126,6 +129,7 @@ export const OrderFormModal = ({
     setCustomerMode("existing");
     setNewCustomer(EMPTY_NEW_CUSTOMER);
     setError(null);
+    setCreatedOrder(null);
   }, [open, order, lockedCustomer, setError]);
 
   const setField = (field) => (event) =>
@@ -200,16 +204,18 @@ export const OrderFormModal = ({
             ? `تمت إضافة العميل ${saved.customer.fullName} (${saved.customerId}) والطلب ${saved.orderId}`
             : `تمت إضافة الطلب ${saved.orderId}`,
       );
-      // The order is saved either way; only say something when the message did not go.
-      if (!isEditing && saved.whatsappStatus === "FAILED") {
-        toast.error(`حُفظ الطلب لكن تعذّر إرسال رسالة واتساب. يمكنك إعادة الإرسال من جدول الطلبات.`);
-      }
       onSaved?.(saved);
-      onClose();
+      // A new order goes on to the WhatsApp step; an edit is done.
+      if (isEditing) onClose();
+      else setCreatedOrder(saved);
     } catch {
       // Shown in the form.
     }
   };
+
+  if (open && createdOrder) {
+    return <WhatsappShareModal order={createdOrder} onClose={onClose} />;
+  }
 
   return (
     <Modal

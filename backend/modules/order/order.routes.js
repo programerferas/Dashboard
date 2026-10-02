@@ -19,7 +19,6 @@ router.post("/", validate(createOrderSchema), controller.createOrder);
 
 router.get("/:orderId", controller.getOrder);
 router.patch("/:orderId", validate(updateOrderSchema), controller.updateOrder);
-router.post("/:orderId/whatsapp", controller.resendWhatsapp);
 
 // Removing history is admin-only; employees change the status instead.
 router.delete("/:orderId", requireRole("ADMIN"), controller.deleteOrder);

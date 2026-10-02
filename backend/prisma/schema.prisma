@@ -107,12 +107,6 @@ enum OrderStatus {
   CANCELLED
 }
 
-enum WhatsappStatus {
-  SENT
-  FAILED
-  SKIPPED // WHATSAPP_ENABLED was off
-}
-
 model Order {
   id      Int    @id @default(autoincrement())
   orderId String @unique // O001, O002, ...
@@ -137,12 +131,6 @@ model Order {
   notes       String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
-  // The WhatsApp notice sent to the admin when the order was created. Null for
-  // orders that existed before the feature.
-  whatsappStatus WhatsappStatus?
-  whatsappSentAt DateTime?
-  whatsappError  String?
 
   @@index([customerId])
   @@index([orderDate])

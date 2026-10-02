@@ -21,11 +21,6 @@ export const updateOrder = asyncHandler(async (req, res) => {
   res.json(order);
 });
 
-export const resendWhatsapp = asyncHandler(async (req, res) => {
-  const order = await orderService.resendOrderWhatsapp(req.params.orderId);
-  res.json(order);
-});
-
 export const deleteOrder = asyncHandler(async (req, res) => {
   const result = await orderService.deleteOrder(req.params.orderId);
   res.json(result);
