@@ -25,6 +25,11 @@ export const createUser = asyncHandler(async (req, res) => {
   res.status(201).json(user);
 });
 
+export const deleteUser = asyncHandler(async (req, res) => {
+  const user = await authService.deleteUser(Number(req.params.id), req.user.id);
+  res.json(user);
+});
+
 export const listUsers = asyncHandler(async (req, res) => {
   const users = await authService.listUsers();
   res.json(users);

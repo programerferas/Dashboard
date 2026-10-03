@@ -6,4 +6,5 @@ export const authApi = {
   me: (options) => api.get("/auth/me", options),
   listUsers: () => api.get("/auth/users"),
   createUser: (data) => api.post("/auth/users", data),
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
 };

@@ -20,5 +20,6 @@ router.post(
   validate(createUserSchema),
   controller.createUser,
 );
+router.delete("/users/:id", requireAuth, requireRole("ADMIN"), controller.deleteUser);
 
 export default router;

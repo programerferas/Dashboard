@@ -65,5 +65,23 @@ export const createUser = async ({ name, email, password, role }) => {
   });
 };
 
+export const deleteUser = async (id, currentUserId) => {
+  // Deleting yourself would end your own session mid-click and could lock
+  // everyone out; another admin has to do it.
+  if (id === currentUserId) throw new AppError("لا يمكنك حذف حسابك الخاص", 400);
+
+  const user = await prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_FIELDS });
+  if (!user) throw new AppError("الحساب غير موجود", 404);
+
+  // There must always be someone who can manage accounts.
+  if (user.role === "ADMIN") {
+    const admins = await prisma.user.count({ where: { role: "ADMIN", active: true } });
+    if (admins <= 1) throw new AppError("لا يمكن حذف آخر مدير", 400);
+  }
+
+  await prisma.user.delete({ where: { id } });
+  return user;
+};
+
 export const listUsers = () =>
   prisma.user.findMany({ select: PUBLIC_USER_FIELDS, orderBy: { createdAt: "asc" } });

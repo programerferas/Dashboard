@@ -5,7 +5,7 @@
 // or create accounts.
 import { useState } from "react";
 import DataTable from "../components/ui/DataTable.jsx";
-import Modal from "../components/ui/Modal.jsx";
+import Modal, { ConfirmDialog } from "../components/ui/Modal.jsx";
 import {
   Alert,
   Badge,
@@ -132,6 +132,21 @@ const SettingsPage = () => {
     [isAdmin],
   );
 
+  const toast = useToast();
+  const [deleting, setDeleting] = useState(null);
+  const { run: runDelete, saving: deleteBusy } = useAction();
+
+  const onConfirmDelete = async () => {
+    try {
+      await runDelete(() => authApi.deleteUser(deleting.id));
+      toast.success(`تم حذف حساب ${deleting.name}`);
+      setDeleting(null);
+      reload();
+    } catch (deleteError) {
+      toast.error(deleteError.message);
+    }
+  };
+
   const columns = [
     {
       key: "name",
@@ -159,6 +174,18 @@ const SettingsPage = () => {
       ),
     },
     { key: "createdAt", label: "تاريخ الإضافة", render: (row) => formatDate(row.createdAt) },
+    {
+      key: "actions",
+      label: "الإجراءات",
+      align: "right",
+      // No button on your own row: the API refuses it anyway.
+      render: (row) =>
+        row.id === user.id ? null : (
+          <Button size="sm" icon="trash" onClick={() => setDeleting(row)}>
+            حذف
+          </Button>
+        ),
+    },
   ];
 
   return (
@@ -240,6 +267,19 @@ const SettingsPage = () => {
       ) : null}
 
       <AddUserModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={reload} />
+
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        title="حذف الحساب"
+        message={
+          deleting
+            ? `سيُحذف حساب ${deleting.name} (${deleting.email}) ولن يتمكن من تسجيل الدخول بعد الآن.`
+            : ""
+        }
+        busy={deleteBusy}
+        onConfirm={onConfirmDelete}
+        onClose={() => setDeleting(null)}
+      />
     </>
   );
 };
