@@ -1,6 +1,6 @@
 // The order message the admin sends to the WhatsApp group. Built in the browser
 // and handed to WhatsApp through a share link, so no WhatsApp API is involved.
-import { formatDate, humanise } from "./format.js";
+import { formatAmount, formatDate, humanise } from "./format.js";
 
 const line = (label, value) => (value ? `${label}: ${value}` : null);
 
@@ -14,6 +14,7 @@ export const buildOrderMessage = (order) =>
     line("المنتج", `${order.productName} × ${order.quantity}`),
     line("الفئة", order.category),
     line("المناسبة", order.occasion),
+    line("المبلغ المدفوع", order.paidAmount != null ? formatAmount(order.paidAmount) : null),
     line("تاريخ الطلب", formatDate(order.orderDate)),
     line("الحالة", humanise(order.status)),
     order.notes ? `ملاحظات:\n${order.notes}` : null,

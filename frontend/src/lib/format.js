@@ -68,6 +68,15 @@ export const relativeDate = (value) => {
 export const formatNumber = (value) =>
   typeof value === "number" ? value.toLocaleString(LOCALE) : EMPTY;
 
+// Prisma sends Decimal columns as strings ("150.5"), so convert before formatting.
+export const formatAmount = (value) => {
+  if (value === null || value === undefined || value === "") return EMPTY;
+  const amount = Number(value);
+  return Number.isNaN(amount)
+    ? EMPTY
+    : amount.toLocaleString(LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
 export const orEmpty = (value) => {
   if (value === null || value === undefined || value === "") return EMPTY;
   return value;

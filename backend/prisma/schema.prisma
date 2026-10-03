@@ -127,6 +127,8 @@ model Order {
   category    String
   occasion    String?
   quantity    Int         @default(1)
+  // How much the customer has paid so far, so the admin can see who still owes.
+  paidAmount  Decimal?    @db.Decimal(10, 2)
   status      OrderStatus @default(PROCESSING)
   notes       String?
   createdAt   DateTime    @default(now())

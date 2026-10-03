@@ -41,6 +41,7 @@ const emptyForm = () => ({
   occasion: "",
   orderDate: todayInputValue(),
   quantity: 1,
+  paidAmount: "",
   status: "PROCESSING",
   notes: "",
 });
@@ -55,6 +56,7 @@ const toFormValues = (order) => {
     occasion: order.occasion ?? "",
     orderDate: toDateInputValue(order.orderDate),
     quantity: order.quantity ?? 1,
+    paidAmount: order.paidAmount ?? "",
     status: order.status ?? "PROCESSING",
     notes: order.notes ?? "",
   };
@@ -188,6 +190,7 @@ export const OrderFormModal = ({
       occasion: values.occasion,
       orderDate: values.orderDate,
       quantity: Number(values.quantity),
+      paidAmount: values.paidAmount,
       status: values.status,
       notes: values.notes,
     };
@@ -415,12 +418,15 @@ export const OrderFormModal = ({
             />
           </Field>
 
-          <Field label="المناسبة" optional htmlFor="occasion">
+          <Field label="قدر المبلغ المدفوع" optional htmlFor="paidAmount">
             <TextInput
-              id="occasion"
-              value={values.occasion}
-              onChange={setField("occasion")}
-              placeholder="هدية"
+              id="paidAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              value={values.paidAmount}
+              onChange={setField("paidAmount")}
+              placeholder="0"
             />
           </Field>
 

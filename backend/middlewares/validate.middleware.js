@@ -61,6 +61,7 @@ const FIELD_LABELS = {
   occasion: "المناسبة",
   orderDate: "تاريخ الطلب",
   quantity: "الكمية",
+  paidAmount: "المبلغ المدفوع",
   status: "الحالة",
   active: "الحالة",
   search: "البحث",

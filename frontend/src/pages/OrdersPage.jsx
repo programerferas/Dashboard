@@ -17,7 +17,7 @@ import { useDebounce } from "../hooks/useDebounce.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
-import { formatDate, formatNumber, humanise, orEmpty } from "../lib/format.js";
+import { formatAmount, formatDate, formatNumber, humanise, orEmpty } from "../lib/format.js";
 import { ORDER_SORTS, ORDER_STATUSES, ORDER_STATUS_TONE, toOptions } from "../lib/options.js";
 import { openWhatsappShare } from "../lib/whatsapp.js";
 
@@ -31,7 +31,6 @@ const OrdersPage = () => {
     search: "",
     customerId: searchParams.get("customerId") ?? "",
     category: "",
-    occasion: "",
     status: "ALL",
     dateFrom: "",
     dateTo: "",
@@ -55,7 +54,6 @@ const OrdersPage = () => {
           search: debouncedSearch,
           customerId: filters.customerId,
           category: filters.category,
-          occasion: filters.occasion,
           status: filters.status,
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
@@ -65,7 +63,7 @@ const OrdersPage = () => {
         },
         { signal },
       ),
-    [debouncedSearch, filters.customerId, filters.category, filters.occasion, filters.status, filters.dateFrom, filters.dateTo, filters.sort, page],
+    [debouncedSearch, filters.customerId, filters.category, filters.status, filters.dateFrom, filters.dateTo, filters.sort, page],
   );
 
   const { data: options } = useApi(({ signal }) => ordersApi.filterOptions({ signal }), []);
@@ -104,7 +102,6 @@ const OrdersPage = () => {
     Boolean(filters.search) ||
     Boolean(filters.customerId) ||
     Boolean(filters.category) ||
-    Boolean(filters.occasion) ||
     filters.status !== "ALL" ||
     Boolean(filters.dateFrom) ||
     Boolean(filters.dateTo);
@@ -138,7 +135,12 @@ const OrdersPage = () => {
       ),
     },
     { key: "category", label: "الفئة", render: (order) => order.category },
-    { key: "occasion", label: "المناسبة", render: (order) => orEmpty(order.occasion) },
+    {
+      key: "paidAmount",
+      label: "قدر المبلغ المدفوع",
+      align: "right",
+      render: (order) => formatAmount(order.paidAmount),
+    },
     {
       key: "quantity",
       label: "الكمية",
@@ -243,19 +245,6 @@ const OrdersPage = () => {
                 onChange={(event) => setFilter("category")(event.target.value)}
                 options={options?.categories ?? []}
                 placeholder="كل الفئات"
-              />
-            </div>
-
-            <div className="filters__field">
-              <label className="filters__label" htmlFor="occasionFilter">
-                المناسبة
-              </label>
-              <Select
-                id="occasionFilter"
-                value={filters.occasion}
-                onChange={(event) => setFilter("occasion")(event.target.value)}
-                options={options?.occasions ?? []}
-                placeholder="كل المناسبات"
               />
             </div>
           </div>

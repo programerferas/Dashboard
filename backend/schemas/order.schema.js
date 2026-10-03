@@ -26,6 +26,16 @@ const orderSchema = z.object({
   occasion: optionalText(60),
   orderDate: z.coerce.date({ message: "أدخل تاريخ طلب صحيحًا" }),
   quantity: z.coerce.number().int().min(1, "يجب أن تكون الكمية 1 على الأقل").max(1000).default(1),
+  // Empty means "not recorded"; an explicit null clears it when editing.
+  paidAmount: z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.coerce
+      .number({ message: "أدخل مبلغًا صحيحًا" })
+      .min(0, "لا يمكن أن يكون المبلغ سالبًا")
+      .max(99999999)
+      .nullable()
+      .optional(),
+  ),
   status: z.enum(ORDER_STATUSES).default("PROCESSING"),
   notes: optionalText(1000),
 });
