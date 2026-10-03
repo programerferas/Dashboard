@@ -9,16 +9,6 @@ import { AppError } from "../../utils/appError.js";
 
 const SALT_ROUNDS = 10;
 
-// Never send the password hash to the client.
-const PUBLIC_USER_FIELDS = {
-  id: true,
-  name: true,
-  email: true,
-  role: true,
-  active: true,
-  createdAt: true,
-};
-
 export const hashPassword = (password) => bcrypt.hash(password, SALT_ROUNDS);
 
 export const signToken = (user) =>
@@ -61,7 +51,15 @@ export const createUser = async ({ name, email, password, role }) => {
 
   return prisma.user.create({
     data: { name, email, password: await hashPassword(password), role },
-    select: PUBLIC_USER_FIELDS,
+    // Never send the password hash to the client.
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      active: true,
+      createdAt: true,
+    },
   });
 };
 
@@ -70,7 +68,17 @@ export const deleteUser = async (id, currentUserId) => {
   // everyone out; another admin has to do it.
   if (id === currentUserId) throw new AppError("لا يمكنك حذف حسابك الخاص", 400);
 
-  const user = await prisma.user.findUnique({ where: { id }, select: PUBLIC_USER_FIELDS });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      active: true,
+      createdAt: true,
+    },
+  });
   if (!user) throw new AppError("الحساب غير موجود", 404);
 
   // There must always be someone who can manage accounts.
@@ -84,4 +92,14 @@ export const deleteUser = async (id, currentUserId) => {
 };
 
 export const listUsers = () =>
-  prisma.user.findMany({ select: PUBLIC_USER_FIELDS, orderBy: { createdAt: "asc" } });
+  prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      active: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
