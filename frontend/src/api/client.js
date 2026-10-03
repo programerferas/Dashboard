@@ -1,8 +1,10 @@
 // The single place that talks to the API. Every other file goes through this, so
 // error handling, credentials and the base URL are defined once.
 //
-// In development Vite proxies /api to the Express server (see vite.config.js), so
-// the default base URL is empty and requests are same-origin.
+// In development Vite proxies /api to the Express server (see vite.config.js); in
+// production Vercel does the same (see vercel.json). Either way the base URL is
+// empty and requests are same-origin, so the session cookie is first-party and
+// works in every browser. Leave VITE_API_URL unset on Vercel.
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 // Thrown for any non-2xx response, carrying the status so callers can react to
