@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://dashboard-iota-bice-64.vercel.app/api/:path*"
+      "destination": "https://dashboard-s1y7.onrender.com/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
