@@ -47,6 +47,8 @@ const FIELD_LABELS = {
   phone: "الهاتف",
   email: "البريد الإلكتروني",
   password: "كلمة المرور",
+  newPassword: "كلمة المرور الجديدة",
+  currentPassword: "كلمة المرور الحالية",
   role: "الدور",
   age: "العمر",
   gender: "الجنس",

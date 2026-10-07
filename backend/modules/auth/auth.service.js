@@ -63,6 +63,29 @@ export const createUser = async ({ name, email, password, role }) => {
   });
 };
 
+export const updateAccount = async (userId, { name, email, newPassword, currentPassword }) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AppError("الحساب غير موجود", 404);
+
+  const matches = await bcrypt.compare(currentPassword, user.password);
+  if (!matches) throw new AppError("كلمة المرور الحالية غير صحيحة", 400);
+
+  if (email && email !== user.email) {
+    const taken = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (taken) throw new AppError("يوجد حساب بهذا البريد الإلكتروني بالفعل", 409);
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(name ? { name } : {}),
+      ...(email ? { email } : {}),
+      ...(newPassword ? { password: await hashPassword(newPassword) } : {}),
+    },
+    select: { id: true, name: true, email: true, role: true, active: true },
+  });
+};
+
 export const deleteUser = async (id, currentUserId) => {
   // Deleting yourself would end your own session mid-click and could lock
   // everyone out; another admin has to do it.

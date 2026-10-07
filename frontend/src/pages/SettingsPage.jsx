@@ -120,9 +120,131 @@ const AddUserModal = ({ open, onClose, onSaved }) => {
   );
 };
 
+const EditAccountModal = ({ open, onClose }) => {
+  const { user, updateAccount } = useAuth();
+  // Mounted only while open (see SettingsPage), so every opening starts from the
+  // saved account and never shows passwords typed last time.
+  const [values, setValues] = useState({
+    name: user.name,
+    email: user.email,
+    newPassword: "",
+    confirmPassword: "",
+    currentPassword: "",
+  });
+  const { run, saving, error, setError } = useAction();
+  const toast = useToast();
+
+  const setField = (field) => (event) =>
+    setValues((current) => ({ ...current, [field]: event.target.value }));
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    if (values.newPassword !== values.confirmPassword) {
+      setError(new Error("كلمتا المرور الجديدتان غير متطابقتين"));
+      return;
+    }
+    try {
+      await run(() =>
+        updateAccount({
+          name: values.name,
+          email: values.email,
+          newPassword: values.newPassword,
+          currentPassword: values.currentPassword,
+        }),
+      );
+      toast.success("تم حفظ بيانات حسابك");
+      onClose();
+    } catch {
+      // Shown in the form.
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      title="تعديل حسابك"
+      subtitle="أدخل كلمة المرور الحالية لتأكيد أي تغيير."
+      onClose={saving ? undefined : onClose}
+      footer={
+        <>
+          <Button onClick={onClose} disabled={saving}>
+            إلغاء
+          </Button>
+          <Button variant="primary" onClick={onSubmit} disabled={saving}>
+            {saving ? "جارٍ الحفظ..." : "حفظ"}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit}>
+        <FormGrid>
+          {error ? (
+            <div className="form-grid__full">
+              <Alert tone="error">{error.message}</Alert>
+            </div>
+          ) : null}
+
+          <Field label="الاسم الكامل" htmlFor="accountName">
+            <TextInput
+              id="accountName"
+              value={values.name}
+              onChange={setField("name")}
+              required
+            />
+          </Field>
+
+          <Field label="البريد الإلكتروني" htmlFor="accountEmail">
+            <TextInput
+              id="accountEmail"
+              type="email"
+              value={values.email}
+              onChange={setField("email")}
+              required
+            />
+          </Field>
+
+          <Field label="كلمة المرور الجديدة" optional htmlFor="accountNewPassword">
+            <TextInput
+              id="accountNewPassword"
+              type="password"
+              value={values.newPassword}
+              onChange={setField("newPassword")}
+              minLength={8}
+              placeholder="اتركها فارغة لعدم التغيير"
+              autoComplete="new-password"
+            />
+          </Field>
+
+          <Field label="تأكيد كلمة المرور الجديدة" optional htmlFor="accountConfirmPassword">
+            <TextInput
+              id="accountConfirmPassword"
+              type="password"
+              value={values.confirmPassword}
+              onChange={setField("confirmPassword")}
+              autoComplete="new-password"
+            />
+          </Field>
+
+          <Field label="كلمة المرور الحالية" htmlFor="accountCurrentPassword" full>
+            <TextInput
+              id="accountCurrentPassword"
+              type="password"
+              value={values.currentPassword}
+              onChange={setField("currentPassword")}
+              autoComplete="current-password"
+              required
+            />
+          </Field>
+        </FormGrid>
+      </form>
+    </Modal>
+  );
+};
+
 const SettingsPage = () => {
   const { user, isAdmin } = useAuth();
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useDocumentTitle("الإعدادات");
 
@@ -193,7 +315,14 @@ const SettingsPage = () => {
       <PageHead title="الإعدادات" subtitle="حسابك، وللمديرين: صلاحيات الموظفين." />
 
       <div className="dash-grid">
-        <Card title="حسابك">
+        <Card
+          title="حسابك"
+          actions={
+            <Button size="sm" icon="edit" onClick={() => setEditOpen(true)}>
+              تعديل
+            </Button>
+          }
+        >
           <dl className="details">
             <div>
               <dt className="details__label">الاسم</dt>
@@ -267,6 +396,7 @@ const SettingsPage = () => {
       ) : null}
 
       <AddUserModal open={addOpen} onClose={() => setAddOpen(false)} onSaved={reload} />
+      {editOpen ? <EditAccountModal open onClose={() => setEditOpen(false)} /> : null}
 
       <ConfirmDialog
         open={Boolean(deleting)}

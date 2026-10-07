@@ -51,15 +51,22 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const updateAccount = useCallback(async (data) => {
+    const response = await authApi.updateMe(data);
+    setUser(response.user);
+    return response.user;
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
       checking,
       login,
       logout,
+      updateAccount,
       isAdmin: user?.role === "ADMIN",
     }),
-    [user, checking, login, logout],
+    [user, checking, login, logout, updateAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

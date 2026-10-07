@@ -20,6 +20,11 @@ export const me = asyncHandler(async (req, res) => {
   res.json({ user: req.user });
 });
 
+export const updateMe = asyncHandler(async (req, res) => {
+  const user = await authService.updateAccount(req.user.id, req.body);
+  res.json({ user });
+});
+
 export const createUser = asyncHandler(async (req, res) => {
   const user = await authService.createUser(req.body);
   res.status(201).json(user);
